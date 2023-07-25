@@ -1,23 +1,28 @@
 import ProductReview from '@/components/ProductReview';
 import { Button } from '@/components/ui/button';
-import { IProduct } from '@/types/globalTypes';
-import { useEffect, useState } from 'react';
+import { useGetAProductQuery } from '@/redux/api/products';
 import { useParams } from 'react-router-dom';
+import { TailSpin } from 'react-loader-spinner'
+import { useAppDispatch } from '@/redux/hooks';
+import { addToCart } from '@/redux/features/cart/cartSlice';
 
 export default function ProductDetails() {
   const { id } = useParams();
-
-  //! Temporary code, should be replaced with redux
-  const [data, setData] = useState<IProduct[]>([]);
-  useEffect(() => {
-    fetch('../../public/data.json')
-      .then((res) => res.json())
-      .then((data) => setData(data));
-  }, []);
-
-  const product = data?.find((item) => item._id === Number(id));
-
-  //! Temporary code ends here
+  const { data: product, isLoading } = useGetAProductQuery(id!)
+  const dispatch = useAppDispatch()
+  if (isLoading) {
+    return <div style={{ width: "100% ", display: 'flex', justifyContent: "center" }}>
+      <TailSpin
+        height="80"
+        width="80"
+        color="#1493ff"
+        ariaLabel="tail-spin-loading"
+        radius="1"
+        wrapperClass=""
+        visible={true}
+      />
+    </div>
+  }
 
   return (
     <>
@@ -26,17 +31,17 @@ export default function ProductDetails() {
           <img src={product?.image} alt="" />
         </div>
         <div className="w-[50%] space-y-3">
-          <h1 className="text-3xl font-semibold">{product?.name}</h1>
+          <h1 className="text-3xl font-semibold">{product?.model}</h1>
           <p className="text-xl">Rating: {product?.rating}</p>
           <ul className="space-y-1 text-lg">
-            {product?.features?.map((feature) => (
+            {product?.keyFeature?.map((feature: string) => (
               <li key={feature}>{feature}</li>
             ))}
           </ul>
-          <Button>Add to cart</Button>
+          <Button onClick={() => dispatch(addToCart(product))}>Add to cart</Button>
         </div>
       </div>
-      <ProductReview />
+      <ProductReview id={product._id} ></ProductReview>
     </>
   );
 }
